@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>平衡SABC忍的随机模拟器</title>
+    <style>
+        /* 全局样式重置 */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #f6f9fc 0%, #eef2f7 100%);
+            color: #2d3748;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 10px;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        /* 标题栏 */
+        .title-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 20px;
+        }
+        .title-wrapper h2 {
+            color: #1a202c;
+            margin: 0;
+            font-size: 1.6rem;
+            font-weight: 800;
+        }
+        
+        .settings-btn {
+            position: absolute;
+            right: 5px;
+            font-size: 20px;
+            cursor: pointer;
+            background: #ffffff;
+            border-radius: 10px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            border: 1px solid #eee;
+            transition: all 0.2s;
+        }
+        .settings-btn:active { transform: scale(0.9); }
+
+        /* 主抽取按钮 */
+        .btn-group { width: 100%; max-width: 500px; margin-bottom: 15px; }
+        #rollBtn {
+            width: 100%; padding: 18px; font-size: 18px; font-weight: bold; color: #fff;
+            background: linear-gradient(135deg, #0984e3 0%, #0097e6 100%);
+            border: none; border-radius: 14px;
+            box-shadow: 0 6px 15px rgba(9, 132, 227, 0.25);
+            cursor: pointer;
+        }
+        #rollBtn:active { transform: scale(0.98); }
+
+        /* 容器卡片 */
+        .card-container {
+            width: 100%; max-width: 500px; background: #ffffff; padding: 15px;
+            border-radius: 18px; box-shadow: 0 8px 25px rgba(0,0,0,0.04); margin-bottom: 15px;
+            border: 1px solid #f0f0f0;
+        }
+        
+        /* 忍者显示 */
+        .ninjas-result { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+        .ninja-item {
+            padding: 14px 5px; border-radius: 12px; font-weight: 800; font-size: 15px; text-align: center;
+            min-height: 50px; display: flex; align-items: center; justify-content: center;
+            border: 2px solid #f0f0f0;
+        }
+
+        /* 词条结果 */
+        .modifier-result {
+            font-size: 15px; font-weight: bold; padding: 12px;
+            border-radius: 10px; text-align: center; min-height: 44px; display: flex; align-items: center; justify-content: center;
+        }
+        .mod-reward { color: #d63031; background-color: #fff5f5; border: 1.5px dashed #ff7675; }
+        .mod-punish { color: #0984e3; background-color: #f0f8ff; border: 1.5px dashed #74b9ff; }
+        .mod-none { color: #a0aec0; background-color: #f8fafc; border: 1px solid #e2e8f0; font-weight: normal; }
+
+        /* --- 配置面板 --- */
+        #config-container { display: none; padding: 12px; }
+        .setting-block { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #edf2f7; }
+        .setting-title { font-weight: bold; margin-bottom: 8px; display: block; color: #4a5568; font-size: 14px; }
+        
+        /* 比例输入并排 */
+        .prob-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 15px; }
+        .prob-item { display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; }
+        .prob-item input { width: 60px; padding: 5px; border-radius: 6px; border: 1px solid #ddd; text-align: center; }
+
+        .trigger-prob { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; }
+        .trigger-prob input { width: 60px; height: 32px; border: 1px solid #ddd; border-radius: 6px; text-align: center; }
+
+        /* 设置内的表格样式 */
+        .config-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        .config-table th { background: #4a5568; color: white; padding: 8px 2px; font-size: 12px; }
+        .config-table td { padding: 6px 2px; border-bottom: 1px solid #eee; }
+        .config-table input, .config-table select { width: 100%; border: 1px solid #ddd; border-radius: 4px; padding: 4px; font-size: 12px; }
+
+        .action-btns { display: flex; gap: 8px; margin-top: 15px; }
+        .add-btn { flex: 1; background: #e6fffa; color: #049f7e; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; border: none; cursor: pointer; }
+        .save-btn { flex: 2; background: #2d3748; color: #fff; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; border: none; cursor: pointer; }
+
+        /* 导入导出区域样式 */
+        .io-section { margin-top: 15px; padding-top: 15px; border-top: 2px solid #f0f4f8; }
+        .io-btns { display: flex; gap: 8px; margin-top: 8px; }
+        .io-btn { flex: 1; background: #f1f2f6; color: #57606f; padding: 8px; border-radius: 6px; font-size: 12px; font-weight: bold; border: 1px solid #dfe4ea; cursor: pointer; }
+        .io-btn:active { background: #dfe4ea; }
+
+        /* 历史记录 - 黑底表头 */
+        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .history-header h3 { font-size: 16px; margin: 0; }
+        #clearBtn { background-color: #ff7675; color: white; padding: 4px 10px; border-radius: 6px; font-size: 12px; border: none; cursor: pointer; }
+
+        .history-scroll { width: 100%; overflow-x: auto; border-radius: 10px; border: 1px solid #2d3436; }
+        .history-table { width: 100%; border-collapse: collapse; min-width: 420px; background: white; }
+        .history-table th { background-color: #2d3436; color: #ffffff; padding: 10px 5px; font-size: 13px; font-weight: bold; }
+        .history-table td { padding: 12px 5px; font-size: 13px; border-bottom: 1px solid #e2e8f0; text-align: center; }
+        
+        .settings-footer { margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ddd; font-size: 11px; color: #a0aec0; text-align: center; }
+
+        /* 稀有度颜色方案 */
+        .color-S { color: #b8860b !important; border-color: #f1c40f !important; background-color: #fffef0; } 
+        .color-A { color: #8e44ad !important; border-color: #dcdde1 !important; background-color: #faf5ff; } 
+        .color-B { color: #2980b9 !important; border-color: #dcdde1 !important; background-color: #f0f8ff; } 
+        .color-C { color: #1e8449 !important; border-color: #dcdde1 !important; background-color: #f5fff9; }
+    </style>
+</head>
+<body>
+
+    <div class="title-wrapper">
+        <h2>随机模拟器</h2><h4>v6</h4>
+        <div class="settings-btn" onclick="toggleConfig()">⚙️</div>
+    </div>
+
+    <div class="btn-group">
+        <button id="rollBtn" onclick="generateResults()">随机抽取3个忍者</button>
+    </div>
+
+    <div class="card-container">
+        <div class="ninjas-result">
+            <div id="res-1" class="ninja-item">-</div>
+            <div id="res-2" class="ninja-item">-</div>
+            <div id="res-3" class="ninja-item">-</div>
+        </div>
+        <div id="res-modifier" class="modifier-result mod-none">【无词条】</div>
+    </div>
+
+    <div class="card-container config-container" id="config-container">
+        <div class="setting-block">
+            <span class="setting-title">忍者出现率（比例）</span>
+            <div class="prob-inputs">
+                <div class="prob-item">S忍 <input type="number" id="probS" value="1"></div>
+                <div class="prob-item">A忍 <input type="number" id="probA" value="1"></div>
+                <div class="prob-item">B忍 <input type="number" id="probB" value="1"></div>
+                <div class="prob-item">C忍 <input type="number" id="probC" value="1"></div>
+            </div>
+        </div>
+
+        <div class="setting-block trigger-prob">
+            <span class="setting-title" style="margin-bottom:0">词条触发概率</span>
+            <div style="display:flex; align-items:center;">
+                <input type="number" id="triggerProbInput" value="50">
+                <span style="font-size: 14px; font-weight: bold; margin-left: 5px;">%</span>
+            </div>
+        </div>
+        
+        <div class="setting-block" style="border-bottom:none; padding-bottom:0">
+            <span class="setting-title" style="font-size:13px; margin-bottom:5px">词条权重设置</span>
+            <div style="overflow-x:auto;">
+                <table class="config-table" id="modifierTable">
+                    <thead>
+                        <tr>
+                            <th width="24%">类型</th>
+                            <th>词条描述</th>
+                            <th width="15%">权重</th>
+                            <th width="12%">删</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modifierTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="action-btns">
+            <button class="add-btn" onclick="addRow()">+ 新增词条</button>
+            <button class="save-btn" onclick="saveConfig()">保存设置</button>
+        </div>
+
+        <div class="io-section">
+            <span class="setting-title" style="font-size:12px; color:#718096;">配置备份与同步</span>
+            <div class="io-btns">
+                <button class="io-btn" onclick="exportConfig()">复制配置文本</button>
+                <button class="io-btn" onclick="importConfig()">粘贴配置文本</button>
+            </div>
+        </div>
+
+        <div class="settings-footer">Created by R @1203605850</div>
+    </div>
+
+    <div class="card-container" style="flex-grow:1">
+        <div class="history-header">
+            <h3>最近记录</h3>
+            <button id="clearBtn" onclick="clearHistory()">清空</button>
+        </div>
+        <div class="history-scroll">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th width="18%">时间</th>
+                        <th>忍者1</th>
+                        <th>忍者2</th>
+                        <th>忍者3</th>
+                        <th width="35%">触发词条</th>
+                    </tr>
+                </thead>
+                <tbody id="history-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const colorMap = { "随机S": "color-S", "随机A": "color-A", "随机B": "color-B", "随机C": "color-C" };
+        let ninjaProbs = { S: 1, A: 1, B: 1, C: 1 };
+        let triggerProb = 50;
+        let modifiers = [
+            { type: 'reward', text: '自选通灵', weight: 1 },
+            { type: 'reward', text: '自选密卷', weight: 1 },
+            { type: 'reward', text: '自选保底忍者', weight: 1 },
+            { type: 'punish', text: '有大就开', weight: 1 },
+            { type: 'punish', text: '通灵好了就按', weight: 1 },
+            { type: 'punish', text: '不使用摇杆移动y轴', weight: 1 }
+        ];
+
+        window.onload = () => {
+            const savedNinjaProbs = localStorage.getItem('naruto_ninja_probs_v4');
+            const savedTriggerProb = localStorage.getItem('naruto_trigger_prob_v4');
+            const savedModifiers = localStorage.getItem('naruto_modifiers_v4');
+            if (savedNinjaProbs) ninjaProbs = JSON.parse(savedNinjaProbs);
+            if (savedTriggerProb) triggerProb = savedTriggerProb;
+            if (savedModifiers) modifiers = JSON.parse(savedModifiers);
+            
+            updateConfigUI();
+            renderTable();
+        };
+
+        function updateConfigUI() {
+            document.getElementById('probS').value = ninjaProbs.S;
+            document.getElementById('probA').value = ninjaProbs.A;
+            document.getElementById('probB').value = ninjaProbs.B;
+            document.getElementById('probC').value = ninjaProbs.C;
+            document.getElementById('triggerProbInput').value = triggerProb;
+        }
+
+        function toggleConfig() {
+            const c = document.getElementById('config-container');
+            c.style.display = (c.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('modifierTableBody');
+            tbody.innerHTML = '';
+            modifiers.forEach((mod, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><select class="mod-type"><option value="reward" ${mod.type==='reward'?'selected':''}>奖励</option><option value="punish" ${mod.type==='punish'?'selected':''}>惩罚</option></select></td>
+                    <td><input type="text" value="${mod.text}" class="mod-text"></td>
+                    <td><select class="mod-weight"><option value="1" ${mod.weight==1?'selected':''}>1</option><option value="2" ${mod.weight==2?'selected':''}>2</option><option value="3" ${mod.weight==3?'selected':''}>3</option></select></td>
+                    <td><span style="color:#e53e3e; font-size:18px; cursor:pointer; font-weight:bold" onclick="removeRow(${index})">×</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function addRow() { modifiers.push({ type: 'reward', text: '', weight: 1 }); renderTable(); }
+        function removeRow(index) { modifiers.splice(index, 1); renderTable(); }
+
+        function saveConfig() {
+            ninjaProbs.S = parseFloat(document.getElementById('probS').value)||0;
+            ninjaProbs.A = parseFloat(document.getElementById('probA').value)||0;
+            ninjaProbs.B = parseFloat(document.getElementById('probB').value)||0;
+            ninjaProbs.C = parseFloat(document.getElementById('probC').value)||0;
+            triggerProb = parseFloat(document.getElementById('triggerProbInput').value)||0;
+            
+            const types = document.querySelectorAll('.mod-type'), texts = document.querySelectorAll('.mod-text'), weights = document.querySelectorAll('.mod-weight');
+            const newMod = [];
+            for(let i=0; i<texts.length; i++) { 
+                if(texts[i].value.trim()!=="") {
+                    newMod.push({ type: types[i].value, text: texts[i].value.trim(), weight: parseInt(weights[i].value) });
+                }
+            }
+            modifiers = newMod;
+            localStorage.setItem('naruto_ninja_probs_v4', JSON.stringify(ninjaProbs));
+            localStorage.setItem('naruto_trigger_prob_v4', triggerProb);
+            localStorage.setItem('naruto_modifiers_v4', JSON.stringify(modifiers));
+            toggleConfig();
+            alert("设置已保存！");
+        }
+
+        // --- 导入导出核心逻辑 ---
+        function exportConfig() {
+            // 构建配置对象
+            const configData = {
+                ninjaProbs,
+                triggerProb,
+                modifiers
+            };
+            const configStr = btoa(unescape(encodeURIComponent(JSON.stringify(configData))));
+            
+            // 复制到剪贴板
+            const tempInput = document.createElement("textarea");
+            tempInput.value = configStr;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            
+            alert("配置已转换为文本并复制到剪贴板，请发送给好友粘贴即可！");
+        }
+
+        function importConfig() {
+            const configStr = prompt("请粘贴导出的配置文本：");
+            if (!configStr) return;
+            
+            try {
+                const configData = JSON.parse(decodeURIComponent(escape(atob(configStr))));
+                
+                // 简单校验
+                if (configData.ninjaProbs && Array.isArray(configData.modifiers)) {
+                    ninjaProbs = configData.ninjaProbs;
+                    triggerProb = configData.triggerProb;
+                    modifiers = configData.modifiers;
+                    
+                    // 同步到 UI 和本地存储
+                    updateConfigUI();
+                    renderTable();
+                    localStorage.setItem('naruto_ninja_probs_v4', JSON.stringify(ninjaProbs));
+                    localStorage.setItem('naruto_trigger_prob_v4', triggerProb);
+                    localStorage.setItem('naruto_modifiers_v4', JSON.stringify(modifiers));
+                    
+                    alert("导入成功！已更新当前配置。");
+                } else {
+                    throw new Error("格式错误");
+                }
+            } catch (e) {
+                alert("无效的配置文本，请检查是否复制完整！");
+            }
+        }
+
+        function getRandomNinja() {
+            let total = ninjaProbs.S + ninjaProbs.A + ninjaProbs.B + ninjaProbs.C;
+            let rand = Math.random() * (total || 1);
+            if (rand < ninjaProbs.S) return "随机S";
+            rand -= ninjaProbs.S;
+            if (rand < ninjaProbs.A) return "随机A";
+            rand -= ninjaProbs.A;
+            if (rand < ninjaProbs.B) return "随机B";
+            return "随机C";
+        }
+
+        function generateResults() {
+            const resN = [getRandomNinja(), getRandomNinja(), getRandomNinja()];
+            let tMod = null;
+            if (Math.random()*100 <= triggerProb && modifiers.length > 0) {
+                let tw = modifiers.reduce((s, m) => s + m.weight, 0);
+                let r = Math.random() * tw;
+                for (let m of modifiers) { if (r < m.weight) { tMod = m; break; } r -= m.weight; }
+            }
+            for(let i=1; i<=3; i++) {
+                const el = document.getElementById(`res-${i}`);
+                el.innerText = resN[i-1];
+                el.className = 'ninja-item ' + colorMap[resN[i-1]];
+            }
+            const mEl = document.getElementById('res-modifier');
+            if (tMod) {
+                mEl.innerText = (tMod.type==='reward'?'【奖励】':'【惩罚】') + tMod.text;
+                mEl.className = 'modifier-result ' + (tMod.type==='reward'?'mod-reward':'mod-punish');
+            } else {
+                mEl.innerText = '【无词条】'; mEl.className = 'modifier-result mod-none';
+            }
+            addHistory(resN, tMod);
+        }
+
+        function addHistory(ns, m) {
+            const tbody = document.getElementById('history-body');
+            const tr = document.createElement('tr');
+            const time = new Date().toLocaleTimeString('zh-CN', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false });
+            let mHtml = m ? `<span style="color:${m.type==='reward'?'#d63031':'#0984e3'}; font-weight:bold;">${m.type==='reward'?'奖励':'惩罚'}:${m.text}</span>` : '<span style="color:#a0aec0">无</span>';
+            tr.innerHTML = `
+                <td>${time}</td>
+                <td class="${colorMap[ns[0]]}"><b>${ns[0]}</b></td>
+                <td class="${colorMap[ns[1]]}"><b>${ns[1]}</b></td>
+                <td class="${colorMap[ns[2]]}"><b>${ns[2]}</b></td>
+                <td style="text-align:left; padding-left:10px;">${mHtml}</td>
+            `;
+            tbody.insertBefore(tr, tbody.firstChild);
+        }
+
+        function clearHistory() { if(confirm("清空记录？")) document.getElementById('history-body').innerHTML = ''; }
+    </script>
+</body>
+</html>
