@@ -10,6 +10,7 @@
             --apple-grey: #86868b;
             --apple-link: #0066cc;
             --apple-bg: #f5f5f7;
+            --apple-border: #d2d2d7;
         }
 
         body {
@@ -23,10 +24,10 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* 顶部导航条感 */
+        /* 顶部导航感知 */
         nav {
             position: fixed;
             top: 0;
@@ -34,109 +35,139 @@
             height: 44px;
             background: rgba(251, 251, 253, 0.8);
             backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             z-index: 9999;
+            border-bottom: 0.5px solid rgba(0,0,0,0.1);
         }
 
-        /* 主体容器 */
         .container {
             text-align: center;
             padding: 20px;
-            max-width: 800px;
-            animation: fadeIn 1.2s ease-out;
+            max-width: 600px;
+            animation: fadeIn 1.2s cubic-bezier(0.23, 1, 0.32, 1);
         }
 
-        /* 标题设计 */
         h1 {
-            font-size: 56px;
+            font-size: 48px;
             font-weight: 600;
-            letter-spacing: -0.005em;
-            margin-bottom: 10px;
-            background: linear-gradient(180deg, #1d1d1f 0%, #434344 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.015em;
+            margin-bottom: 12px;
+            color: var(--apple-black);
         }
 
-        /* 链接样式 */
         .bili-link {
-            font-size: 24px;
+            font-size: 21px;
             color: var(--apple-link);
             text-decoration: none;
-            font-weight: 400;
             display: inline-block;
-            margin-bottom: 40px;
-            transition: all 0.3s ease;
+            margin-bottom: 48px;
+            transition: opacity 0.3s;
         }
 
         .bili-link:hover {
+            opacity: 0.7;
             text-decoration: underline;
         }
 
         .bili-link::after {
-            content: " >";
-            font-weight: 600;
+            content: " ↗";
+            font-size: 16px;
         }
 
-        /* 展开区域样式 */
+        /* 工具部分 - 重新设计 */
+        .tools-section {
+            width: fit-content;
+            margin: 0 auto;
+        }
+
         details {
-            margin-top: 20px;
-            width: 100%;
-            cursor: pointer;
+            border-radius: 20px;
+            transition: all 0.3s ease;
         }
 
         summary {
-            font-size: 21px;
-            color: var(--apple-black);
             list-style: none;
             outline: none;
-            transition: color 0.3s;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--apple-grey);
+            padding: 6px 16px;
+            border: 1px solid var(--apple-border);
+            border-radius: 40px;
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.2s ease;
+            background: #fff;
         }
 
-        summary::-webkit-details-marker {
-            display: none;
-        }
+        summary::-webkit-details-marker { display: none; }
 
         summary:hover {
-            color: var(--apple-grey);
+            background: var(--apple-bg);
+            color: var(--apple-black);
+            border-color: var(--apple-grey);
         }
 
+        summary::before {
+            content: "";
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background-color: #34c759; /* 苹果风格的绿色小点，暗示工具在线 */
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        /* 展开内容小而美 */
         .content {
-            margin-top: 20px;
-            padding: 30px;
+            margin-top: 12px;
+            padding: 16px 24px;
             background-color: var(--apple-bg);
-            border-radius: 18px;
-            transition: transform 0.3s ease;
+            border-radius: 14px;
+            text-align: left;
+            border: 0.5px solid rgba(0,0,0,0.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .tool-link {
-            font-size: 28px;
-            font-weight: 600;
-            color: var(--apple-black);
             text-decoration: none;
             display: block;
         }
 
-        .tool-link span {
-            display: block;
-            font-size: 14px;
-            color: var(--apple-grey);
-            margin-top: 8px;
-            font-weight: 400;
+        .tool-name {
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--apple-black);
+            margin-bottom: 2px;
         }
 
-        .tool-link:hover {
-            opacity: 0.8;
+        .tool-desc {
+            font-size: 12px;
+            color: var(--apple-grey);
+            line-height: 1.4;
+        }
+
+        .tool-link:hover .tool-name {
+            color: var(--apple-link);
         }
 
         /* 动画 */
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* 响应式 */
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* 移动端适配 */
         @media (max-width: 734px) {
-            h1 { font-size: 40px; }
-            .bili-link { font-size: 19px; }
+            h1 { font-size: 34px; }
+            .bili-link { font-size: 18px; }
         }
     </style>
 </head>
@@ -148,15 +179,17 @@
         <h1>黑鹰不是中二丶</h1>
         <a href="https://space.bilibili.com/483844988" class="bili-link" target="_blank">Bilibili 频道</a>
 
-        <details>
-            <summary>工具</summary>
-            <div class="content">
-                <a href="/random" class="tool-link">
-                    随机挑战
-                    <span>V4大概吧，近期不改了。</span>
-                </a>
-            </div>
-        </details>
+        <div class="tools-section">
+            <details>
+                <summary>工具</summary>
+                <div class="content">
+                    <a href="/random" class="tool-link">
+                        <div class="tool-name">随机挑战</div>
+                        <div class="tool-desc">V4大概吧，近期不改了。</div>
+                    </a>
+                </div>
+            </details>
+        </div>
     </div>
 
 </body>
